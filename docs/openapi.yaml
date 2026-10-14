@@ -22,6 +22,8 @@ tags:
     description: Iesnieguma pieņemšana un apskate (R1–R3)
   - name: Sistēma
     description: Tehniskie galapunkti (R4)
+  - name: Konti
+    description: Darbinieka reģistrācija un pieteikšanās (CR-4)
 
 paths:
   /health:
@@ -101,6 +103,110 @@ paths:
                 $ref: '#/components/schemas/Submission'
         '404':
           $ref: '#/components/responses/NotFound'
+
+  /auth/register:
+    post:
+      tags: [Konti]
+      operationId: registerAccount
+      summary: Reģistrēt kontu (CR-4)
+      description: |
+        Izveido kontu ar e-pastu un paroli. Reģistrēties drīkst jebkurš.
+        E-pasts tiek salīdzināts bez reģistra atšķirības. Parole tiek
+        glabāta tikai kā jaucējvērtība (scrypt ar sāli).
+
+        Pieņem JSON vai HTML formas datus. Ja pieprasījums nāk no HTML
+        formas (`application/x-www-form-urlencoded`), atbilde ir HTML lapa
+        ar tādu pašu statusa kodu.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Credentials'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Credentials'
+      responses:
+        '201':
+          description: Konts izveidots
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+            text/html:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/AuthValidationError'
+        '404':
+          $ref: '#/components/responses/RouteNotFound'
+        '409':
+          description: Konts ar šādu e-pastu jau eksistē. Konts netiek dublēts.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error:
+                  code: EMAIL_TAKEN
+                  message: Email is already registered
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /auth/login:
+    post:
+      tags: [Konti]
+      operationId: login
+      summary: Pieteikties (CR-4)
+      description: |
+        Pārbauda e-pastu un paroli. Ja tie ir pareizi, iestata sesijas
+        sīkdatni `session` (`HttpOnly`, `SameSite=Lax`).
+
+        Nepareizai parolei un neeksistējošam e-pastam atbilde ir vienāda,
+        lai neatklātu, vai konts eksistē.
+
+        Pieņem JSON vai HTML formas datus, tāpat kā `registerAccount`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Credentials'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Credentials'
+      responses:
+        '200':
+          description: Pieteikšanās izdevusies
+          headers:
+            Set-Cookie:
+              description: Sesijas sīkdatne `session`
+              schema:
+                type: string
+                example: session=abc123; HttpOnly; Path=/; SameSite=lax
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+            text/html:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/AuthValidationError'
+        '401':
+          description: Nepareizs e-pasts vai parole
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error:
+                  code: INVALID_CREDENTIALS
+                  message: Invalid email or password
+        '404':
+          $ref: '#/components/responses/RouteNotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
 components:
   schemas:
@@ -216,6 +322,34 @@ components:
       enum: [RECEIVED, IN_PROGRESS, FORWARDED, ANSWERED, WITHDRAWN]
       example: RECEIVED
 
+    Credentials:
+      type: object
+      description: Konta pieteikšanās dati (CR-4)
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: darbinieks@example.com
+        password:
+          type: string
+          format: password
+          minLength: 8
+          example: drosa-parole-123
+
+    Account:
+      type: object
+      description: Konts bez paroles (CR-4)
+      required: [id, email]
+      properties:
+        id:
+          type: integer
+          example: 1
+        email:
+          type: string
+          format: email
+          example: darbinieks@example.com
+
     Error:
       type: object
       description: Vienota kļūdu shēma visiem galapunktiem
@@ -271,3 +405,38 @@ components:
             error:
               code: NOT_FOUND
               message: Submission not found
+    AuthValidationError:
+      description: Kļūdaini konta dati. Konts netiek izveidots.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: VALIDATION_ERROR
+              message: Request validation failed
+              details:
+                - field: password
+                  issue: TOO_SHORT
+    RouteNotFound:
+      description: |
+        Pieprasītais ceļš nav atrasts. Konta operācijas pašas 404 neatgriež;
+        atbilde ir deklarēta kursa līguma noteikuma dēļ.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: NOT_FOUND
+              message: Not found
+    InternalError:
+      description: Servera iekšēja kļūda. Pieprasījumu var atkārtot vēlāk.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: INTERNAL_ERROR
+              message: Internal server error
