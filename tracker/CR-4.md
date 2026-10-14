@@ -2,14 +2,14 @@
 id: CR-4
 type: change-request
 title: "Darbinieka reģistrācija un pieteikšanās"
-status: DRAFT
+status: READY
 priority: medium
 reporter: "Reģistrācijas nodaļa (izdomāts)"
-owner: "@<github-lietotājvārds>"
+owner: "@ciekurelucija-design"
 contract: "docs/openapi.yaml · POST /auth/register, POST /auth/login"
 depends_on: []
-exported: "<datums> · Ezermalas pieteikumu sistēma (simulācija)"
-data_check: "<kas pārbaudīts pirms eksporta>"
+exported: "2026-10-14 · Ezermalas pieteikumu sistēma (simulācija)"
+data_check: "Nav personas datu, piekļuves datu, iekšējo adrešu vai pielikumu"
 ---
 
 # CR-4 · Darbinieka reģistrācija un pieteikšanās
@@ -40,10 +40,10 @@ jāsaglabā pastāvīgi, lai tie paliktu pieejami arī pēc sistēmas restartē�
 
 | Jautājums | Atbilde | Kas atbildēja, kad |
 |---|---|---|
-| Kas drīkst reģistrēties: jebkurš vai tikai darbinieki ar iestādes e-pastu? | jebkurš|darbinieks |
-| Kā pieteikšanās tiek uzturēta: sesijas sīkdatne vai žetons (token)? | sesijas sīkdatne| darbinieks|
-| Vai vajag HTML formas, vai tikai API? | HTML formas|darbinieks |
-| Kāda datubāze: SQLite pietiek mācību vajadzībām? | Jā, pietiek|darbinieks |
+| Kas drīkst reģistrēties: jebkurš vai tikai darbinieki ar iestādes e-pastu? | jebkurš|darbinieks, 2026-10-14 |
+| Kā pieteikšanās tiek uzturēta: sesijas sīkdatne vai žetons (token)? | sesijas sīkdatne| darbinieks, 2026-10-14|
+| Vai vajag HTML formas, vai tikai API? | HTML formas|darbinieks,2026-10-14 |
+| Kāda datubāze: SQLite pietiek mācību vajadzībām? | Jā, pietiek|darbinieks,2026-10-14 |
 
 ## Ārpus apjoma (out of scope)
 
